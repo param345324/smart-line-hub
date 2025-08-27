@@ -2,6 +2,8 @@ import { MapPin, Clock, Users, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface ServiceCardProps {
   name: string;
@@ -20,6 +22,33 @@ export const ServiceCard = ({
   category, 
   status 
 }: ServiceCardProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleJoinQueue = () => {
+    if (status === "closed") return;
+    
+    // Store service data in localStorage for the dashboard
+    const serviceData = {
+      name,
+      location,
+      queueLength,
+      currentWait,
+      category,
+      status
+    };
+    localStorage.setItem('currentQueue', JSON.stringify(serviceData));
+    
+    toast({
+      title: "Joined Queue Successfully!",
+      description: `You're now #${queueLength + 1} in line at ${name}`,
+    });
+    
+    // Navigate to dashboard after a short delay
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1500);
+  };
   const getStatusColor = () => {
     switch (status) {
       case "open": return "bg-success text-success-foreground";
@@ -71,6 +100,7 @@ export const ServiceCard = ({
           className="w-full" 
           disabled={status === "closed"}
           variant={status === "closed" ? "secondary" : "default"}
+          onClick={handleJoinQueue}
         >
           {status === "closed" ? "Closed" : "Join Queue"}
           {status !== "closed" && <ArrowRight className="ml-2 h-4 w-4" />}

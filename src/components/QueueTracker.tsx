@@ -1,8 +1,11 @@
-import { Clock, MapPin, Users, Bell, CheckCircle } from "lucide-react";
+import { Clock, MapPin, Users, Bell, CheckCircle, Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface QueueTrackerProps {
   serviceName: string;
@@ -21,6 +24,56 @@ export const QueueTracker = ({
   estimatedWait,
   status
 }: QueueTrackerProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  const handleEnableNotifications = () => {
+    if (!notificationsEnabled) {
+      if ("Notification" in window) {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            setNotificationsEnabled(true);
+            toast({
+              title: "Notifications Enabled!",
+              description: "You'll be notified when your turn is approaching.",
+            });
+          } else {
+            toast({
+              title: "Notifications Denied",
+              description: "Please enable notifications in your browser settings.",
+              variant: "destructive",
+            });
+          }
+        });
+      } else {
+        toast({
+          title: "Notifications Not Supported",
+          description: "Your browser doesn't support notifications.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setNotificationsEnabled(false);
+      toast({
+        title: "Notifications Disabled",
+        description: "You won't receive queue notifications.",
+      });
+    }
+  };
+
+  const handleLeaveQueue = () => {
+    localStorage.removeItem('currentQueue');
+    toast({
+      title: "Left Queue",
+      description: "You have successfully left the queue.",
+    });
+    navigate('/');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
   const progress = ((totalInQueue - yourPosition) / totalInQueue) * 100;
   
   const getStatusConfig = () => {
@@ -99,12 +152,28 @@ export const QueueTracker = ({
         </div>
 
         <div className="space-y-2">
-          <Button variant="outline" className="w-full">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={handleEnableNotifications}
+          >
             <Bell className="mr-2 h-4 w-4" />
-            Enable Notifications
+            {notificationsEnabled ? "Disable Notifications" : "Enable Notifications"}
           </Button>
-          <Button variant="ghost" className="w-full text-destructive">
+          <Button 
+            variant="ghost" 
+            className="w-full text-destructive"
+            onClick={handleLeaveQueue}
+          >
             Leave Queue
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={handleGoHome}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Back to Home
           </Button>
         </div>
       </CardContent>
